@@ -248,6 +248,7 @@ def _topics_to_connectors(topics_data: dict[str, Any]) -> list[dict[str, Any]]:
                 "name": str(connector.get("name", "")).strip(),
                 "topic": str(connector.get("topic", "")).strip(),
                 "table": str(connector.get("table", "")).strip(),
+                "mapping": mapping if isinstance(mapping, dict) else {},
                 "mapping_rows": mapping_rows or [{"json_key": "", "column_name": ""}],
             }
         )
@@ -261,7 +262,7 @@ def _build_topics_data(connectors: list[dict[str, Any]]) -> dict[str, Any]:
                 "name": connector["name"],
                 "topic": connector["topic"],
                 "table": connector["table"],
-                **({"mapping": connector["mapping"]} if connector["mapping"] else {}),
+                **({"mapping": connector.get("mapping", {})} if connector.get("mapping", {}) else {}),
             }
             for connector in connectors
         ]
