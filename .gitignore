@@ -3,5 +3,5 @@ __pycache__
 *.pyc
 *.pyo
 *.pyd
-config.yaml
-topics.yaml
+config/config.yaml
+config/topics.yaml

@@ -5,7 +5,7 @@ from threading import Lock
 
 import paho.mqtt.client as mqtt
 
-from domain.models import MqttConfig
+from core.models import MqttConfig
 
 
 class ManagedMqttClient:

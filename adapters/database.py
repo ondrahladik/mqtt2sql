@@ -7,9 +7,9 @@ import mysql.connector
 from mysql.connector import Error as MysqlConnectorError
 from mysql.connector.abstracts import MySQLConnectionAbstract
 
-from domain.exceptions import DatabaseError
-from domain.models import AppConfig, ConnectorConfig, MysqlConfig
-from domain.ports import DatabaseGateway
+from core.exceptions import DatabaseError
+from core.models import AppConfig, ConnectorConfig, MysqlConfig
+from core.ports import DatabaseGateway
 
 
 class MysqlDatabaseGateway(DatabaseGateway):

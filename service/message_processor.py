@@ -2,9 +2,9 @@ import json
 import logging
 from collections.abc import Mapping
 
-from domain.exceptions import DatabaseError
-from domain.models import ConnectorConfig
-from domain.ports import DatabaseGateway, MessageHandler
+from core.exceptions import DatabaseError
+from core.models import ConnectorConfig
+from core.ports import DatabaseGateway, MessageHandler
 
 
 class JsonMessageProcessor(MessageHandler):

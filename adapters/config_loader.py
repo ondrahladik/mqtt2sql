@@ -3,13 +3,19 @@ from typing import Any
 
 import yaml
 
-from domain.exceptions import ConfigurationError
-from domain.models import AppConfig, ConnectorConfig, MqttConfig, MysqlConfig, TopicsConfig
+from core.exceptions import ConfigurationError
+from core.models import AppConfig, ConnectorConfig, MqttConfig, MysqlConfig, TopicsConfig
 
 
 def load_settings(config_path: Path, topics_path: Path) -> tuple[MqttConfig, MysqlConfig, AppConfig, TopicsConfig]:
-    config_data = _load_yaml(config_path)
-    topics_data = _load_yaml(topics_path)
+    config_data = load_yaml_file(config_path)
+    topics_data = load_yaml_file(topics_path)
+    return validate_settings(config_data, topics_data)
+
+
+def validate_settings(
+    config_data: dict[str, Any], topics_data: dict[str, Any]
+) -> tuple[MqttConfig, MysqlConfig, AppConfig, TopicsConfig]:
     mqtt_config = _parse_mqtt_config(config_data.get("mqtt"))
     mysql_config = _parse_mysql_config(config_data.get("mysql"))
     app_config = _parse_app_config(config_data.get("app"))
@@ -17,7 +23,7 @@ def load_settings(config_path: Path, topics_path: Path) -> tuple[MqttConfig, Mys
     return mqtt_config, mysql_config, app_config, topics_config
 
 
-def _load_yaml(path: Path) -> dict[str, Any]:
+def load_yaml_file(path: Path) -> dict[str, Any]:
     if not path.exists():
         raise ConfigurationError(f"Configuration file '{path}' does not exist")
     with path.open("r", encoding="utf-8") as file:
@@ -25,6 +31,14 @@ def _load_yaml(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ConfigurationError(f"Configuration file '{path}' must contain a YAML object")
     return data
+
+
+def save_yaml_file(path: Path, data: dict[str, Any]) -> None:
+    if not isinstance(data, dict):
+        raise ConfigurationError(f"Configuration file '{path}' must contain a YAML object")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as file:
+        yaml.safe_dump(data, file, allow_unicode=True, sort_keys=False)
 
 
 def _parse_mqtt_config(data: Any) -> MqttConfig:

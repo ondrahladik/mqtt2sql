@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from typing import Protocol
 
-from domain.models import ConnectorConfig
+from core.models import ConnectorConfig
 
 
 class DatabaseGateway(Protocol):

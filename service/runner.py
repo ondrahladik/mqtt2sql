@@ -3,9 +3,9 @@ import signal
 import threading
 from types import FrameType
 
-from application.message_processor import JsonMessageProcessor
-from domain.models import AppConfig, ConnectorConfig, MqttConfig
-from infrastructure.mqtt_client import ManagedMqttClient
+from adapters.mqtt_client import ManagedMqttClient
+from core.models import AppConfig, ConnectorConfig, MqttConfig
+from service.message_processor import JsonMessageProcessor
 
 
 class Application:

@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>mqtt2sql</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #17191f;
+        --panel: #20242c;
+        --panel-soft: #262b35;
+        --border: #363d49;
+        --text: #eceff4;
+        --muted: #a3acb9;
+        --accent: #66b3ff;
+        --success: #2f9b73;
+        --error: #c86672;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Segoe UI", Tahoma, sans-serif;
+      }
+
+      .page {
+        width: min(1360px, calc(100% - 24px));
+        margin: 0 auto;
+        padding: 16px 0 24px;
+      }
+
+      .header {
+        padding: 10px 0 14px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 16px;
+      }
+
+      .header h1 {
+        margin: 0 0 4px;
+        font-size: 1.3rem;
+      }
+
+      .header p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .messages {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .message {
+        padding: 10px 12px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+      }
+
+      .message.success {
+        border-left: 4px solid var(--success);
+      }
+
+      .message.error {
+        border-left: 4px solid var(--error);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 16px;
+      }
+
+      .sidebar,
+      .editor {
+        background: var(--panel);
+        border: 1px solid var(--border);
+      }
+
+      .sidebar {
+        padding: 12px;
+        align-self: start;
+      }
+
+      .sidebar h2,
+      .editor h2 {
+        margin: 0 0 10px;
+        font-size: 1rem;
+      }
+
+      .connector-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .connector {
+        padding: 10px;
+        background: var(--panel-soft);
+        border: 1px solid var(--border);
+      }
+
+      .connector strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .connector-line {
+        color: var(--muted);
+        font-size: 0.9rem;
+        word-break: break-word;
+      }
+
+      .connector-mapping {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+        display: grid;
+        gap: 4px;
+        font-size: 0.9rem;
+      }
+
+      .empty {
+        color: var(--muted);
+      }
+
+      .editor {
+        padding: 12px;
+      }
+
+      .editor-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .editor-pane h2 {
+        margin-bottom: 4px;
+      }
+
+      .editor-pane p {
+        margin: 0 0 10px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 72vh;
+        resize: vertical;
+        border: 1px solid var(--border);
+        background: var(--panel-soft);
+        color: var(--text);
+        padding: 12px;
+        font: 0.92rem/1.5 Consolas, "Cascadia Code", monospace;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      button {
+        border: 1px solid var(--border);
+        background: var(--panel-soft);
+        color: var(--text);
+        padding: 10px 14px;
+        cursor: pointer;
+        font: inherit;
+      }
+
+      .primary {
+        background: var(--accent);
+        color: #10141b;
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+
+      @media (max-width: 1080px) {
+        .layout,
+        .editor-grid {
+          grid-template-columns: 1fr;
+        }
+
+        textarea {
+          min-height: 40vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <h1>mqtt2sql</h1>
+        <p>Uprava konfigurace sluzby a prehled connectoru</p>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="messages">
+            {% for category, message in messages %}
+              <div class="message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      <div class="layout">
+        <aside class="sidebar">
+          <h2>Connectory</h2>
+          {% if connectors %}
+            <div class="connector-list">
+              {% for connector in connectors %}
+                <section class="connector">
+                  <strong>{{ connector.name or "bez nazvu" }}</strong>
+                  <div class="connector-line">topic: {{ connector.topic or "-" }}</div>
+                  <div class="connector-line">table: {{ connector.table or "-" }}</div>
+                  {% if connector.mapping %}
+                    <div class="connector-mapping">
+                      {% for key, value in connector.mapping.items() %}
+                        <div>{{ key }} -> {{ value }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </section>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty">Zatim nejsou definovane zadne connectory.</div>
+          {% endif %}
+        </aside>
+
+        <form class="editor" method="post" action="{{ url_for('save') }}">
+          <div class="editor-grid">
+            <section class="editor-pane">
+              <h2>config.yaml</h2>
+              <p>MQTT, MySQL a nastaveni aplikace</p>
+              <textarea name="config_text" spellcheck="false">{{ config_text }}</textarea>
+            </section>
+
+            <section class="editor-pane">
+              <h2>topics.yaml</h2>
+              <p>Definice connectoru a mappingu</p>
+              <textarea name="topics_text" spellcheck="false">{{ topics_text }}</textarea>
+            </section>
+          </div>
+
+          <div class="toolbar">
+            <button type="submit" class="primary">Ulozit</button>
+            <button type="submit" formaction="{{ url_for('reset') }}" formmethod="post">Obnovit z disku</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </body>
+</html>
