@@ -35,7 +35,7 @@ py mqtt2sql.py
 The default web address is:
 
 ```text
-http://127.0.0.1:8080
+http://127.0.0.1:8000
 ```
 
 Start only the MQTT service:

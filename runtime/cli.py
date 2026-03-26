@@ -55,19 +55,22 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--config", type=Path, default=Path("config/config.yaml"))
     parser.add_argument("--topics", type=Path, default=Path("config/topics.yaml"))
     subparsers = parser.add_subparsers(dest="command")
-    parser.set_defaults(command="all", host="0.0.0.0", port=8080)
+    parser.set_defaults(command="all", host="0.0.0.0", port=8000)
     subparsers.add_parser("run")
     web_parser = subparsers.add_parser("web")
     web_parser.add_argument("--host", default="0.0.0.0")
-    web_parser.add_argument("--port", type=int, default=8080)
+    web_parser.add_argument("--port", type=int, default=8000)
     all_parser = subparsers.add_parser("all")
     all_parser.add_argument("--host", default="0.0.0.0")
-    all_parser.add_argument("--port", type=int, default=8080)
+    all_parser.add_argument("--port", type=int, default=8000)
     return parser.parse_args()
 
 def _run_web(args: argparse.Namespace) -> int:
     configure_logging(_resolve_web_log_level(args))
-    serve_web(args.config, args.topics, args.host, args.port)
+    try:
+        serve_web(args.config, args.topics, args.host, args.port)
+    except KeyboardInterrupt:
+        logging.getLogger("mqtt2sql").info("Shutdown requested by user")
     return 0
 
 
@@ -75,7 +78,11 @@ def _run_all(args: argparse.Namespace) -> int:
     configure_logging(_resolve_web_log_level(args))
     web_thread = threading.Thread(target=serve_web, args=(args.config, args.topics, args.host, args.port), daemon=True)
     web_thread.start()
-    return _run_service(args)
+    try:
+        return _run_service(args)
+    except KeyboardInterrupt:
+        logging.getLogger("mqtt2sql").info("Shutdown requested by user")
+        return 0
 
 
 def _resolve_web_log_level(args: argparse.Namespace) -> str:
