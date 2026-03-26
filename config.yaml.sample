@@ -1,0 +1,17 @@
+mqtt:
+  host: localhost
+  port: 1883
+  username: mqtt_user
+  password: mqtt_password
+  client_id: mqtt2sql
+
+mysql:
+  host: localhost
+  port: 3306
+  user: mqtt2sql
+  password: mysql_password
+  database: mqtt2sql
+
+app:
+  log_level: INFO
+  reconnect_interval: 5

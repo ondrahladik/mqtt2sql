@@ -1,0 +1,10 @@
+connectors:
+  - name: sensor_living_room
+    topic: home/living-room/sensor
+    table: living_room_measurements
+    mapping:
+      teplota: temperature
+      vlhkost: humidity
+  - name: sensor_garage
+    topic: home/garage/sensor
+    table: garage_measurements
