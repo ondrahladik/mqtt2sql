@@ -1,7 +1,6 @@
 import logging
-import time
 from collections.abc import Callable
-from threading import Lock
+from threading import Event, Lock
 
 import paho.mqtt.client as mqtt
 
@@ -17,6 +16,7 @@ class ManagedMqttClient:
         self._message_handler: Callable[[str, bytes], None] | None = None
         self._topics: tuple[str, ...] = ()
         self._lock = Lock()
+        self._stop_event = Event()
 
     def configure(
         self,
@@ -24,6 +24,7 @@ class ManagedMqttClient:
         reconnect_interval: int,
         message_handler: Callable[[str, bytes], None],
     ) -> None:
+        self._stop_event.clear()
         self._config = config
         self._reconnect_interval = reconnect_interval
         self._message_handler = message_handler
@@ -36,17 +37,19 @@ class ManagedMqttClient:
         client.reconnect_delay_set(min_delay=reconnect_interval, max_delay=max(reconnect_interval * 2, reconnect_interval))
         self._client = client
 
-    def connect(self) -> None:
+    def connect(self) -> bool:
         client = self._require_client()
         config = self._require_config()
-        while True:
+        while not self._stop_event.is_set():
             try:
                 client.connect(config.host, config.port)
                 self._logger.info("Connected to MQTT broker %s:%s", config.host, config.port)
-                return
+                return True
             except OSError as error:
                 self._logger.error("MQTT connection failed: %s", error)
-                time.sleep(self._reconnect_interval)
+                if self._stop_event.wait(self._reconnect_interval):
+                    return False
+        return False
 
     def subscribe(self, topics: tuple[str, ...]) -> None:
         self._topics = topics
@@ -60,6 +63,7 @@ class ManagedMqttClient:
         self._require_client().loop_start()
 
     def close(self) -> None:
+        self._stop_event.set()
         client = self._client
         if client is None:
             return
@@ -110,14 +114,15 @@ class ManagedMqttClient:
     def _attempt_reconnect(self) -> None:
         client = self._require_client()
         with self._lock:
-            while not client.is_connected():
+            while not self._stop_event.is_set() and not client.is_connected():
                 try:
                     client.reconnect()
                     self._logger.info("Reconnected to MQTT broker")
                     return
                 except OSError as error:
                     self._logger.error("MQTT reconnect failed: %s", error)
-                    time.sleep(self._reconnect_interval)
+                    if self._stop_event.wait(self._reconnect_interval):
+                        return
 
     def _require_client(self) -> mqtt.Client:
         if self._client is None:

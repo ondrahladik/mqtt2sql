@@ -29,7 +29,9 @@ class Application:
     def run(self) -> int:
         self._install_signal_handlers()
         self._mqtt_client.configure(self._mqtt_config, self._app_config.reconnect_interval, self._processor.handle)
-        self._mqtt_client.connect()
+        if not self._mqtt_client.connect():
+            self._logger.info("mqtt2sql startup cancelled")
+            return 0
         self._mqtt_client.subscribe(tuple(connector.topic for connector in self._connectors))
         self._mqtt_client.loop_start()
         self._logger.info("mqtt2sql started")
@@ -40,6 +42,7 @@ class Application:
         return 0
 
     def stop(self) -> None:
+        self._mqtt_client.close()
         self._shutdown_event.set()
 
     def _install_signal_handlers(self) -> None:
