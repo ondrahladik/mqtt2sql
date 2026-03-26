@@ -1,21 +1,24 @@
 <!doctype html>
-<html lang="cs">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>mqtt2sql</title>
+    <title>mqtt2sql Admin</title>
     <style>
       :root {
         color-scheme: dark;
-        --bg: #17191f;
-        --panel: #20242c;
-        --panel-soft: #262b35;
-        --border: #363d49;
-        --text: #eceff4;
-        --muted: #a3acb9;
-        --accent: #66b3ff;
-        --success: #2f9b73;
-        --error: #c86672;
+        --bg: #1b1d22;
+        --panel: #242831;
+        --panel-2: #2a2f3a;
+        --panel-3: #303643;
+        --border: #3d4554;
+        --text: #f1f4f8;
+        --muted: #b8c0cc;
+        --accent: #76b8ff;
+        --accent-2: #5d9ee8;
+        --success: #39a47d;
+        --error: #d46b78;
+        --danger: #a23c4d;
       }
 
       * {
@@ -29,21 +32,30 @@
         font-family: "Segoe UI", Tahoma, sans-serif;
       }
 
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
       .page {
-        width: min(1360px, calc(100% - 24px));
+        width: min(1440px, calc(100% - 24px));
         margin: 0 auto;
         padding: 16px 0 24px;
       }
 
       .header {
-        padding: 10px 0 14px;
-        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
         margin-bottom: 16px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border);
       }
 
       .header h1 {
         margin: 0 0 4px;
-        font-size: 1.3rem;
+        font-size: 1.45rem;
       }
 
       .header p {
@@ -51,14 +63,32 @@
         color: var(--muted);
       }
 
+      .tabs {
+        display: flex;
+        gap: 10px;
+      }
+
+      .tab {
+        padding: 9px 14px;
+        border: 1px solid var(--border);
+        background: var(--panel);
+      }
+
+      .tab.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #11151b;
+        font-weight: 600;
+      }
+
       .messages {
         display: grid;
         gap: 8px;
-        margin-bottom: 14px;
+        margin-bottom: 16px;
       }
 
       .message {
-        padding: 10px 12px;
+        padding: 11px 12px;
         background: var(--panel);
         border: 1px solid var(--border);
       }
@@ -73,12 +103,11 @@
 
       .layout {
         display: grid;
-        grid-template-columns: 280px 1fr;
+        grid-template-columns: 320px 1fr;
         gap: 16px;
       }
 
-      .sidebar,
-      .editor {
+      .card {
         background: var(--panel);
         border: 1px solid var(--border);
       }
@@ -88,10 +117,18 @@
         align-self: start;
       }
 
-      .sidebar h2,
-      .editor h2 {
-        margin: 0 0 10px;
-        font-size: 1rem;
+      .sidebar-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .sidebar-head h2,
+      .content h2 {
+        margin: 0;
+        font-size: 1.05rem;
       }
 
       .connector-list {
@@ -99,81 +136,127 @@
         gap: 10px;
       }
 
-      .connector {
-        padding: 10px;
-        background: var(--panel-soft);
+      .connector-item {
+        display: block;
+        padding: 12px;
+        background: var(--panel-2);
         border: 1px solid var(--border);
       }
 
-      .connector strong {
+      .connector-item.active {
+        border-color: var(--accent);
+        background: var(--panel-3);
+      }
+
+      .connector-item strong {
         display: block;
         margin-bottom: 6px;
       }
 
-      .connector-line {
+      .connector-meta {
         color: var(--muted);
         font-size: 0.9rem;
         word-break: break-word;
       }
 
-      .connector-mapping {
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px solid var(--border);
-        display: grid;
-        gap: 4px;
-        font-size: 0.9rem;
+      .content {
+        padding: 16px;
       }
 
-      .empty {
+      .section-head {
+        margin-bottom: 16px;
+      }
+
+      .section-head p {
+        margin: 6px 0 0;
         color: var(--muted);
       }
 
-      .editor {
-        padding: 12px;
-      }
-
-      .editor-grid {
+      .form-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 14px;
       }
 
-      .editor-pane h2 {
-        margin-bottom: 4px;
-      }
-
-      .editor-pane p {
-        margin: 0 0 10px;
-        color: var(--muted);
-        font-size: 0.9rem;
-      }
-
-      textarea {
-        width: 100%;
-        min-height: 72vh;
-        resize: vertical;
+      .group {
+        padding: 14px;
         border: 1px solid var(--border);
-        background: var(--panel-soft);
-        color: var(--text);
-        padding: 12px;
-        font: 0.92rem/1.5 Consolas, "Cascadia Code", monospace;
+        background: var(--panel-2);
       }
 
-      textarea:focus {
+      .group.wide {
+        grid-column: 1 / -1;
+      }
+
+      .group h3 {
+        margin: 0 0 12px;
+        font-size: 1rem;
+      }
+
+      .fields {
+        display: grid;
+        gap: 12px;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .field.two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      label {
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 10px 11px;
+        border: 1px solid var(--border);
+        background: var(--panel-3);
+        color: var(--text);
+        font: inherit;
+      }
+
+      input:focus,
+      select:focus {
         outline: none;
         border-color: var(--accent);
       }
 
-      .toolbar {
+      .mapping-table {
+        display: grid;
+        gap: 10px;
+      }
+
+      .mapping-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: end;
+      }
+
+      .mapping-actions,
+      .toolbar,
+      .toolbar-right {
         display: flex;
         gap: 10px;
-        margin-top: 14px;
+        flex-wrap: wrap;
+      }
+
+      .toolbar {
+        margin-top: 16px;
+        justify-content: space-between;
       }
 
       button {
         border: 1px solid var(--border);
-        background: var(--panel-soft);
+        background: var(--panel-3);
         color: var(--text);
         padding: 10px 14px;
         cursor: pointer;
@@ -182,19 +265,35 @@
 
       .primary {
         background: var(--accent);
-        color: #10141b;
         border-color: var(--accent);
+        color: #10141b;
         font-weight: 600;
       }
 
-      @media (max-width: 1080px) {
+      .accent {
+        background: var(--accent-2);
+        border-color: var(--accent-2);
+        color: #f7fbff;
+      }
+
+      .danger {
+        background: var(--danger);
+        border-color: var(--danger);
+      }
+
+      .empty {
+        color: var(--muted);
+        padding: 8px 0;
+      }
+
+      @media (max-width: 1180px) {
         .layout,
-        .editor-grid {
+        .form-grid {
           grid-template-columns: 1fr;
         }
 
-        textarea {
-          min-height: 40vh;
+        .mapping-row {
+          grid-template-columns: 1fr;
         }
       }
     </style>
@@ -202,8 +301,14 @@
   <body>
     <main class="page">
       <header class="header">
-        <h1>mqtt2sql</h1>
-        <p>Uprava konfigurace sluzby a prehled connectoru</p>
+        <div>
+          <h1>mqtt2sql Admin</h1>
+          <p>Manage application settings and MQTT connectors</p>
+        </div>
+        <nav class="tabs">
+          <a href="{{ url_for('settings_page') }}" class="tab {% if page == 'settings' %}active{% endif %}">General Settings</a>
+          <a href="{{ url_for('connectors_page') }}" class="tab {% if page == 'connectors' %}active{% endif %}">Connectors</a>
+        </nav>
       </header>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -216,52 +321,225 @@
         {% endif %}
       {% endwith %}
 
-      <div class="layout">
-        <aside class="sidebar">
-          <h2>Connectory</h2>
-          {% if connectors %}
-            <div class="connector-list">
-              {% for connector in connectors %}
-                <section class="connector">
-                  <strong>{{ connector.name or "bez nazvu" }}</strong>
-                  <div class="connector-line">topic: {{ connector.topic or "-" }}</div>
-                  <div class="connector-line">table: {{ connector.table or "-" }}</div>
-                  {% if connector.mapping %}
-                    <div class="connector-mapping">
-                      {% for key, value in connector.mapping.items() %}
-                        <div>{{ key }} -> {{ value }}</div>
-                      {% endfor %}
+      {% if page == 'settings' %}
+        <section class="card content">
+          <div class="section-head">
+            <h2>General Settings</h2>
+            <p>Configure MQTT, MySQL and runtime behavior.</p>
+          </div>
+
+          <form method="post" action="{{ url_for('save_settings') }}">
+            <div class="form-grid">
+              <section class="group">
+                <h3>MQTT</h3>
+                <div class="fields">
+                  <div class="field">
+                    <label for="mqtt_host">Host</label>
+                    <input id="mqtt_host" name="mqtt_host" value="{{ config_form.mqtt_host }}" required>
+                  </div>
+                  <div class="field">
+                    <label for="mqtt_port">Port</label>
+                    <input id="mqtt_port" name="mqtt_port" value="{{ config_form.mqtt_port }}" inputmode="numeric" required>
+                  </div>
+                  <div class="field">
+                    <label for="mqtt_username">Username</label>
+                    <input id="mqtt_username" name="mqtt_username" value="{{ config_form.mqtt_username }}">
+                  </div>
+                  <div class="field">
+                    <label for="mqtt_password">Password</label>
+                    <input id="mqtt_password" name="mqtt_password" value="{{ config_form.mqtt_password }}">
+                  </div>
+                  <div class="field">
+                    <label for="mqtt_client_id">Client ID</label>
+                    <input id="mqtt_client_id" name="mqtt_client_id" value="{{ config_form.mqtt_client_id }}" required>
+                  </div>
+                </div>
+              </section>
+
+              <section class="group">
+                <h3>MySQL / MariaDB</h3>
+                <div class="fields">
+                  <div class="field">
+                    <label for="mysql_host">Host</label>
+                    <input id="mysql_host" name="mysql_host" value="{{ config_form.mysql_host }}" required>
+                  </div>
+                  <div class="field">
+                    <label for="mysql_port">Port</label>
+                    <input id="mysql_port" name="mysql_port" value="{{ config_form.mysql_port }}" inputmode="numeric" required>
+                  </div>
+                  <div class="field">
+                    <label for="mysql_user">User</label>
+                    <input id="mysql_user" name="mysql_user" value="{{ config_form.mysql_user }}" required>
+                  </div>
+                  <div class="field">
+                    <label for="mysql_password">Password</label>
+                    <input id="mysql_password" name="mysql_password" value="{{ config_form.mysql_password }}">
+                  </div>
+                  <div class="field">
+                    <label for="mysql_database">Database</label>
+                    <input id="mysql_database" name="mysql_database" value="{{ config_form.mysql_database }}" required>
+                  </div>
+                </div>
+              </section>
+
+              <section class="group wide">
+                <h3>Application</h3>
+                <div class="fields">
+                  <div class="field two">
+                    <div class="field">
+                      <label for="app_log_level">Log level</label>
+                      <select id="app_log_level" name="app_log_level">
+                        {% for level in log_levels %}
+                          <option value="{{ level }}" {% if config_form.app_log_level == level %}selected{% endif %}>{{ level }}</option>
+                        {% endfor %}
+                      </select>
                     </div>
-                  {% endif %}
-                </section>
-              {% endfor %}
+                    <div class="field">
+                      <label for="app_reconnect_interval">Reconnect interval</label>
+                      <input id="app_reconnect_interval" name="app_reconnect_interval" value="{{ config_form.app_reconnect_interval }}" inputmode="numeric" required>
+                    </div>
+                  </div>
+                </div>
+              </section>
             </div>
-          {% else %}
-            <div class="empty">Zatim nejsou definovane zadne connectory.</div>
-          {% endif %}
-        </aside>
 
-        <form class="editor" method="post" action="{{ url_for('save') }}">
-          <div class="editor-grid">
-            <section class="editor-pane">
-              <h2>config.yaml</h2>
-              <p>MQTT, MySQL a nastaveni aplikace</p>
-              <textarea name="config_text" spellcheck="false">{{ config_text }}</textarea>
-            </section>
+            <div class="toolbar">
+              <div></div>
+              <div class="toolbar-right">
+                <button type="submit" class="primary">Save Settings</button>
+              </div>
+            </div>
+          </form>
+        </section>
+      {% endif %}
 
-            <section class="editor-pane">
-              <h2>topics.yaml</h2>
-              <p>Definice connectoru a mappingu</p>
-              <textarea name="topics_text" spellcheck="false">{{ topics_text }}</textarea>
-            </section>
+      {% if page == 'connectors' %}
+        <div class="layout">
+          <aside class="card sidebar">
+            <div class="sidebar-head">
+              <h2>Connectors</h2>
+              <a href="{{ url_for('new_connector_page') }}" class="tab">New</a>
+            </div>
+            {% if connectors %}
+              <div class="connector-list">
+                {% for connector in connectors %}
+                  {% set index = loop.index0 %}
+                  <a href="{{ url_for('edit_connector_page', connector_index=index) }}" class="connector-item {% if connector_index == index %}active{% endif %}">
+                    <strong>{{ connector.name }}</strong>
+                    <div class="connector-meta">{{ connector.topic }}</div>
+                    <div class="connector-meta">{{ connector.table }}</div>
+                  </a>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="empty">No connectors defined yet.</div>
+            {% endif %}
+          </aside>
+
+          <section class="card content">
+            <div class="section-head">
+              <h2>{% if connector_index is none %}Create Connector{% else %}Edit Connector{% endif %}</h2>
+              <p>Configure topic subscription, destination table and optional JSON field mapping.</p>
+            </div>
+
+            <form method="post" action="{% if connector_index is none %}{{ url_for('create_connector') }}{% else %}{{ url_for('save_connector', connector_index=connector_index) }}{% endif %}">
+              <div class="form-grid">
+                <section class="group">
+                  <h3>Connector</h3>
+                  <div class="fields">
+                    <div class="field">
+                      <label for="name">Name</label>
+                      <input id="name" name="name" value="{{ connector_form.name }}" required>
+                    </div>
+                    <div class="field">
+                      <label for="topic">MQTT Topic</label>
+                      <input id="topic" name="topic" value="{{ connector_form.topic }}" required>
+                    </div>
+                    <div class="field">
+                      <label for="table">Database Table</label>
+                      <input id="table" name="table" value="{{ connector_form.table }}" required>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="group">
+                  <h3>Mapping</h3>
+                  <div id="mapping-table" class="mapping-table">
+                    {% for row in connector_form.mapping_rows %}
+                      <div class="mapping-row">
+                        <div class="field">
+                          <label>JSON Key</label>
+                          <input name="mapping_json_key" value="{{ row.json_key }}">
+                        </div>
+                        <div class="field">
+                          <label>Column Name</label>
+                          <input name="mapping_column_name" value="{{ row.column_name }}">
+                        </div>
+                        <div class="mapping-actions">
+                          <button type="button" onclick="removeMappingRow(this)">Remove</button>
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                  <div class="toolbar">
+                    <div class="toolbar-right">
+                      <button type="button" class="accent" onclick="addMappingRow()">Add Mapping Row</button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <div class="toolbar">
+                <div class="toolbar-right">
+                  <button type="submit" class="primary">{% if connector_index is none %}Create Connector{% else %}Save Connector{% endif %}</button>
+                </div>
+                {% if connector_index is not none %}
+                  <div class="toolbar-right">
+                    <button type="submit" class="danger" formaction="{{ url_for('delete_connector', connector_index=connector_index) }}" formmethod="post">Delete Connector</button>
+                  </div>
+                {% endif %}
+              </div>
+            </form>
+          </section>
+        </div>
+      {% endif %}
+
+      <template id="mapping-row-template">
+        <div class="mapping-row">
+          <div class="field">
+            <label>JSON Key</label>
+            <input name="mapping_json_key">
           </div>
-
-          <div class="toolbar">
-            <button type="submit" class="primary">Ulozit</button>
-            <button type="submit" formaction="{{ url_for('reset') }}" formmethod="post">Obnovit z disku</button>
+          <div class="field">
+            <label>Column Name</label>
+            <input name="mapping_column_name">
           </div>
-        </form>
-      </div>
+          <div class="mapping-actions">
+            <button type="button" onclick="removeMappingRow(this)">Remove</button>
+          </div>
+        </div>
+      </template>
+
+      <script>
+        function addMappingRow() {
+          const template = document.getElementById("mapping-row-template");
+          const target = document.getElementById("mapping-table");
+          if (!template || !target) {
+            return;
+          }
+          target.appendChild(template.content.firstElementChild.cloneNode(true));
+        }
+
+        function removeMappingRow(button) {
+          const target = document.getElementById("mapping-table");
+          const rows = target ? target.querySelectorAll(".mapping-row") : [];
+          if (rows.length <= 1) {
+            rows[0].querySelectorAll("input").forEach((input) => input.value = "");
+            return;
+          }
+          button.closest(".mapping-row").remove();
+        }
+      </script>
     </main>
   </body>
 </html>

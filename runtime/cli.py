@@ -1,6 +1,5 @@
 import argparse
 import logging
-import sys
 import threading
 from pathlib import Path
 
@@ -9,6 +8,7 @@ from adapters.database import MysqlDatabaseGateway
 from adapters.mqtt_client import ManagedMqttClient
 from admin.server import serve_web
 from core.exceptions import ConfigurationError, DatabaseError
+from runtime.logging_utils import configure_logging
 from service.message_processor import JsonMessageProcessor
 from service.runner import Application
 
@@ -25,9 +25,9 @@ def main() -> int:
 def _run_service(args: argparse.Namespace) -> int:
     try:
         mqtt_config, mysql_config, app_config, topics_config = load_settings(args.config, args.topics)
-        logger = _configure_logging(app_config.log_level)
-    except ConfigurationError as error:
-        logging.basicConfig(level=logging.ERROR, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+        logger = configure_logging(app_config.log_level)
+    except (ConfigurationError, ValueError) as error:
+        configure_logging("ERROR")
         logging.getLogger("mqtt2sql").error("Configuration error: %s", error)
         return 1
     database = MysqlDatabaseGateway(mysql_config, app_config, logger.getChild("database"))
@@ -65,24 +65,22 @@ def _parse_args() -> argparse.Namespace:
     all_parser.add_argument("--port", type=int, default=8080)
     return parser.parse_args()
 
-
-def _configure_logging(log_level: str) -> logging.Logger:
-    level = getattr(logging, log_level.upper(), None)
-    if not isinstance(level, int):
-        raise ConfigurationError(f"Unsupported log level '{log_level}'")
-    logging.basicConfig(level=level, format="%(asctime)s %(levelname)s %(name)s %(message)s", stream=sys.stdout)
-    logging.getLogger("werkzeug").setLevel(level)
-    return logging.getLogger("mqtt2sql")
-
-
 def _run_web(args: argparse.Namespace) -> int:
-    _configure_logging("INFO")
+    configure_logging(_resolve_web_log_level(args))
     serve_web(args.config, args.topics, args.host, args.port)
     return 0
 
 
 def _run_all(args: argparse.Namespace) -> int:
-    _configure_logging("INFO")
+    configure_logging(_resolve_web_log_level(args))
     web_thread = threading.Thread(target=serve_web, args=(args.config, args.topics, args.host, args.port), daemon=True)
     web_thread.start()
     return _run_service(args)
+
+
+def _resolve_web_log_level(args: argparse.Namespace) -> str:
+    try:
+        _, _, app_config, _ = load_settings(args.config, args.topics)
+        return app_config.log_level
+    except ConfigurationError:
+        return "INFO"
