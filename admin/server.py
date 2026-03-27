@@ -1,5 +1,7 @@
 import os
 import secrets
+import sys
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +15,7 @@ from core.exceptions import ConfigurationError
 def create_web_app(config_path: Path, topics_path: Path) -> Flask:
     app = Flask(__name__, template_folder="templates")
     app.config["SECRET_KEY"] = os.environ.get("MQTT2SQL_WEB_SECRET", secrets.token_hex(32))
+    restart_state = {"scheduled": False}
 
     @app.get("/")
     def index() -> str:
@@ -49,7 +52,8 @@ def create_web_app(config_path: Path, topics_path: Path) -> Flask:
                 connector_index=None,
                 log_levels=_log_levels(),
             )
-        flash("Settings saved.", "success")
+        flash("Settings saved. Restarting service...", "success")
+        _schedule_restart(app, restart_state)
         return redirect(url_for("settings_page"))
 
     @app.get("/connectors")
@@ -100,7 +104,8 @@ def create_web_app(config_path: Path, topics_path: Path) -> Flask:
                 connector_index=None,
                 log_levels=_log_levels(),
             )
-        flash("Connector created.", "success")
+        flash("Connector created. Restarting service...", "success")
+        _schedule_restart(app, restart_state)
         return redirect(url_for("connectors_page", selected=len(updated_connectors) - 1))
 
     @app.get("/connectors/<int:connector_index>/edit")
@@ -147,7 +152,8 @@ def create_web_app(config_path: Path, topics_path: Path) -> Flask:
                 connector_index=connector_index,
                 log_levels=_log_levels(),
             )
-        flash("Connector updated.", "success")
+        flash("Connector updated. Restarting service...", "success")
+        _schedule_restart(app, restart_state)
         return redirect(url_for("edit_connector_page", connector_index=connector_index))
 
     @app.post("/connectors/<int:connector_index>/delete")
@@ -168,7 +174,8 @@ def create_web_app(config_path: Path, topics_path: Path) -> Flask:
         except ConfigurationError as error:
             flash(str(error), "error")
             return redirect(url_for("edit_connector_page", connector_index=connector_index))
-        flash("Connector deleted.", "success")
+        flash("Connector deleted. Restarting service...", "success")
+        _schedule_restart(app, restart_state)
         return redirect(url_for("connectors_page"))
 
     return app
@@ -179,6 +186,20 @@ def serve_web(config_path: Path, topics_path: Path, host: str, port: int) -> Non
     app.logger.info("Web interface listening on http://%s:%s", host, port)
     server = make_server(host=host, port=port, app=app, threaded=True)
     server.serve_forever()
+
+
+def _schedule_restart(app: Flask, restart_state: dict[str, bool]) -> None:
+    if restart_state["scheduled"]:
+        return
+    restart_state["scheduled"] = True
+
+    def _restart_process() -> None:
+        app.logger.info("Restarting process to apply configuration changes")
+        os.execv(sys.executable, [sys.executable, *sys.argv])
+
+    timer = threading.Timer(1.2, _restart_process)
+    timer.daemon = True
+    timer.start()
 
 
 def _load_raw_data(config_path: Path, topics_path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
